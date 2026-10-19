@@ -1,0 +1,72 @@
+schema: '2.0'
+stages:
+  download:
+    cmd: uv run python -m src.download_data
+    deps:
+    - path: src/download_data.py
+      hash: md5
+      md5: 3bc60a4fbf32ebf60e92ac6f836626bc
+      size: 604
+    params:
+      params.yaml:
+        data:
+          color: green
+          year: 2024
+          month: 1
+    outs:
+    - path: data/raw
+      hash: md5
+      md5: a9c153941478b5cbeaf8008992daf1ee.dir
+      size: 1362284
+      nfiles: 1
+  train:
+    cmd: uv run python -m src.train
+    deps:
+    - path: data/raw
+      hash: md5
+      md5: a9c153941478b5cbeaf8008992daf1ee.dir
+      size: 1362284
+      nfiles: 1
+    - path: src/config.py
+      hash: md5
+      md5: e6fa6add5ebbeff9cca62d9ae923f173
+      size: 1304
+    - path: src/preprocess.py
+      hash: md5
+      md5: ccd70396b3f005cfc40f8f02c501ea72
+      size: 1477
+    - path: src/train.py
+      hash: md5
+      md5: 9c708a51dfafc8225574980e485bbf49
+      size: 5436
+    - path: uv.lock
+      hash: md5
+      md5: a8d1fb48661e0d96da56c71c29e6c173
+      size: 826169
+    params:
+      params.yaml:
+        mlflow:
+          experiment_name: green-taxi-monitoring
+          registered_model_name: green-taxi-ride-duration
+          alias: production
+        train:
+          test_size: 0.2
+          random_state: 42
+          reference_rows: 5000
+    outs:
+    - path: data/reference/reference.parquet
+      hash: md5
+      md5: e74979cacc244fb07ce70ea50acd2144
+      size: 81939
+    - path: models/model.joblib
+      hash: md5
+      md5: c092924813b38d6cc8529944767dcd2c
+      size: 14514
+    - path: models/model_metadata.json
+      hash: md5
+      md5: 3d477059439d2da95dcb959b472bf88c
+      size: 313
+    - path: reports/train_metrics.json
+      hash: md5
+      md5: 5dffb37b064c52b05256e9f7d572f832
+      size: 92

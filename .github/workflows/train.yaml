@@ -1,0 +1,61 @@
+name: Train taxi model
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "params.yaml"
+      - "dvc.yaml"
+      - "dvc.lock"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/train.yaml"
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 1 * *" # monthly retrain
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version-file: ".python-version"
+
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          version: "0.11.19"
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      # No DVC remote is configured: the `download` stage re-fetches the
+      # public TLC file; its content hash is recorded in dvc.lock.
+      - name: Reproduce the DVC pipeline (download + train + MLflow logging)
+        run: uv run dvc repro
+
+      - name: Show metrics
+        run: |
+          uv run dvc metrics show
+          echo "### Training metrics" >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat reports/train_metrics.json >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Smoke test the API
+        run: uv run python -m src.check_api
+
+      - name: Upload model and MLflow store
+        uses: actions/upload-artifact@v4
+        with:
+          name: trained-model-${{ github.sha }}
+          path: |
+            models/
+            reports/train_metrics.json
+            mlflow.db
+            mlruns/
+          retention-days: 14

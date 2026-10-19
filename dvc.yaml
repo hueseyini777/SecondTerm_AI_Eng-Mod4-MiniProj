@@ -1,0 +1,28 @@
+stages:
+  download:
+    cmd: uv run python -m src.download_data
+    deps:
+      - src/download_data.py
+    params:
+      - data
+    outs:
+      - data/raw
+
+  train:
+    cmd: uv run python -m src.train
+    deps:
+      - src/train.py
+      - src/preprocess.py
+      - src/config.py
+      - data/raw
+      - uv.lock
+    params:
+      - train
+      - mlflow
+    outs:
+      - models/model.joblib
+      - models/model_metadata.json
+      - data/reference/reference.parquet
+    metrics:
+      - reports/train_metrics.json:
+          cache: false

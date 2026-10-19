@@ -1,0 +1,15 @@
+data:
+  color: green
+  year: 2024
+  month: 1
+
+train:
+  test_size: 0.2
+  random_state: 42
+  # Rows of the held-out split kept as the Evidently reference dataset.
+  reference_rows: 5000
+
+mlflow:
+  experiment_name: green-taxi-monitoring
+  registered_model_name: green-taxi-ride-duration
+  alias: production
